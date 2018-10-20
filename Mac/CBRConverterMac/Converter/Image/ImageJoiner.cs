@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using iTextSharp.text;
+using AppKit;
+using Foundation;
+using CoreGraphics;
 
 
 namespace CbrConverter
@@ -16,14 +19,14 @@ namespace CbrConverter
         /// <param name="imageBytes"></param>
         /// <param name="imageNames"></param>
         /// <returns></returns>
-        public Dictionary<PageImageIndex, AppKit.NSImage> Merge(Dictionary<PageImageIndex, AppKit.NSImage> imagesList, string outputPath)
+        public Dictionary<PageImageIndex, NSImage> Merge(Dictionary<PageImageIndex, NSImage> imagesList, string outputPath)
         {
             var imageListByPage = imagesList.GroupBy(i => i.Key.PageIndex);
-            var newImageList = new Dictionary<PageImageIndex, AppKit.NSImage>();
+            var newImageList = new Dictionary<PageImageIndex, NSImage>();
 
             foreach (var imagesInfo in imageListByPage)
             {
-                var imagesPage = new Dictionary<PageImageIndex, AppKit.NSImage>();
+                var imagesPage = new Dictionary<PageImageIndex, NSImage>();
 
                 foreach (var item in imagesInfo)
                 {
@@ -31,7 +34,7 @@ namespace CbrConverter
                     if (item.Value == null)
                     {
                         var imagePath = string.Format(@"{0}\{1}", outputPath, item.Key.ImageName);
-                        image = new AppKit.NSImage(imagePath);
+                        image = new NSImage(imagePath);
                     }
 
                     imagesPage.Add(item.Key, image);
@@ -66,22 +69,21 @@ namespace CbrConverter
             }
 
             // Create new image with max width and sum of all height
-            AppKit.NSImage newImage = new AppKit.NSImage(new CoreGraphics.CGSize(maxWidth, maxHeight));
-            System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(newImage);
+            var newImage = new NSImage(new CoreGraphics.CGSize(maxWidth, maxHeight));
+            newImage.LockFocus();
 
             // merge all images
-            g.Clear(System.Drawing.SystemColors.AppWorkspace);
             foreach (var img in groupImages)
             {
                 if (position == 0)
                 {
-                    g.DrawImage(img.Value, new System.Drawing.Point(0, 0));
+                    img.Value.Draw(new CGPoint(), new CGRect(), NSCompositingOperation.DestinationAtop, 1);
                     position++;
                     maxHeight = img.Value.Size.Height;
                 }
                 else
                 {
-                    g.DrawImage(img.Value, new System.Drawing.Point(0, maxHeight));
+                    img.Value.Draw(new CGPoint(0, maxHeight), new CGRect(), NSCompositingOperation.DestinationAtop, 1);
                     maxHeight += img.Value.Size.Height;
                 }
 
@@ -89,8 +91,6 @@ namespace CbrConverter
                 var imagePath = string.Format(@"{0}\{1}", outputPath, img.Key.ImageName);
                 File.Delete(imagePath);
             }
-
-            g.Dispose();
 
             var pageDetails = new PageImageIndex
             {
@@ -100,10 +100,11 @@ namespace CbrConverter
             };
 
             var newImagePath = string.Format(@"{0}\{1}", outputPath, pageDetails.ImageName);
-            newImage.Save(newImagePath);
+            var newImageData2 = newImage.AsTiff();
+            newImageData2.Save(newImagePath, false);
             newImage.Dispose();
 
-            return new KeyValuePair<PageImageIndex, AppKit.NSImage>(pageDetails, null);
+            return new KeyValuePair<PageImageIndex, NSImage>(pageDetails, null);
         }
     }
 }

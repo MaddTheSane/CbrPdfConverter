@@ -5,7 +5,7 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using iTextSharp.text.pdf.parser;
-//using System.Drawing.Imaging;
+using AppKit;
 using iTextSharp.text.pdf;
 
 namespace CbrConverter
@@ -24,7 +24,7 @@ namespace CbrConverter
             DataAccess.Instance.g_curProgress = 0;
             evnt_UpdateCurBar();
 
-            var imagesList = new Dictionary<PageImageIndex, Image>();          
+            var imagesList = new Dictionary<PageImageIndex, NSImage>();          
 
             // Ask itextsharp to extract image
             var pdfReader = new PdfReader(filename);

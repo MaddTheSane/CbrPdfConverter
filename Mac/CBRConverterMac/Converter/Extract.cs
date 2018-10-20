@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.IO;
 using System.Threading;
 
-//using System.Drawing.Imaging;
-using System.Drawing;
+using AppKit;
+using Foundation;
 using Ionic.Zip;
 using System.ComponentModel;
 using SharpCompress.Archives;
@@ -144,7 +142,7 @@ namespace CbrConverter
 
                 // replace with new output
                 var SourceFolder = DataAccess.Instance.g_WorkingDir.Replace(Path.GetFileName(DataAccess.Instance.g_WorkingDir), "");
-                temporaryDir = temporaryDir.Replace(SourceFolder, DataAccess.Instance.g_Output_dir + "\\");
+                temporaryDir = temporaryDir.Replace(SourceFolder, DataAccess.Instance.g_Output_dir + "/");
 
                 //if the directory already exist, delete it
                 if (Directory.Exists(temporaryDir))
@@ -155,12 +153,8 @@ namespace CbrConverter
                 //inizio test
                 var archive = ArchiveFactory.Open(DataAccess.Instance.g_WorkingFile);
                 //calculating file for pregress bar
-                double CurOneStep = archive.Entries.Count();
-                int divider;
-                if (_ReduceSize)
-                    divider = 33;
-                else
-                    divider = 50;
+                CurOneStep = archive.Entries.Count();
+                int divider = _ReduceSize ? 33 : 50;
                 CurOneStep = divider / CurOneStep;
 
                 //extract the file into the folder
@@ -171,9 +165,13 @@ namespace CbrConverter
                         if (DataAccess.Instance.g_Processing) //this is to stop the thread if stop button is pressed
                         {
 
-                            string path = Path.Combine(temporaryDir, Path.GetFileName(entry.FilePath));
+                            string path = Path.Combine(temporaryDir, Path.GetFileName(entry.Key));
                             //entry.WriteToDirectory(@"C:\temp", ExtractOptions.ExtractFullPath | ExtractOptions.Overwrite);
-                            entry.WriteToFile(path, ExtractOptions.Overwrite);
+                            var eOpts = new ExtractionOptions
+                            {
+                                Overwrite = true
+                            };
+                            entry.WriteToFile(path, eOpts);
 
                             DataAccess.Instance.g_curProgress += CurOneStep;
                             evnt_UpdateCurBar();
@@ -246,13 +244,7 @@ namespace CbrConverter
             Directory.CreateDirectory(temporaryDir);
 
 
-            int divider;
-            if (_ReduceSize)
-                divider = 50;
-            else
-                divider = 80;
-
-
+            int divider = _ReduceSize ? 50 : 80;
             var result = PdfFunctions.PDF_ExportImage(currentFile, temporaryDir, divider, _CheckImagesPages, _JoinImages);
 
             if (result.ImagesAfterMerge != result.Pages)
@@ -454,7 +446,7 @@ namespace CbrConverter
                         break;
 
                     //compressing
-                    using (Image OldImg = Image.FromFile(imageFile))
+                    using (NSImage OldImg = new NSImage(imageFile))
                     {
                         NewImg = imageFile + ".new";
                         SaveJpeg(NewImg, OldImg, NEW_IMG_QUALITY);
@@ -485,43 +477,22 @@ namespace CbrConverter
         /// </summary>
         /// <param name="path">Path to which the image would be saved.</param>
         /// <param name="quality">An integer from 0 to 100, with 100 being the highest quality</param>
-        public static void SaveJpeg(string path, Image img, int quality)
+        public static void SaveJpeg(string path, NSImage img, int quality)
         {
             if (quality < 0 || quality > 100)
-                throw new ArgumentOutOfRangeException("quality must be between 0 and 100.");
+                throw new ArgumentOutOfRangeException(nameof(quality), quality, "quality must be between 0 and 100.");
 
-
-            // Encoder parameter for image quality
-            EncoderParameter qualityParam = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
-            // Jpeg image codec
-            ImageCodecInfo jpegCodec = GetEncoderInfo("image/jpeg");
-
-            EncoderParameters encoderParams = new EncoderParameters(1);
-            encoderParams.Param[0] = qualityParam;
-
-            // to avoid gdi+ error save image to stream instead directly on file system
-            using (MemoryStream ms = new MemoryStream())
+            var tiffData = img.AsTiff();
+            var imgRep = new NSBitmapImageRep(tiffData);
+            double doubleQual = quality;
+            var settings = new NSMutableDictionary
             {
-                img.Save(ms, jpegCodec, encoderParams);
-                ms.ToArray();
-                File.WriteAllBytes(path, ms.ToArray());
-                //img.Save(path, jpegCodec, encoderParams);
-            }
-        }
+                { NSBitmapImageRep.FallbackBackgroundColor, NSColor.White },
+                { NSBitmapImageRep.CompressionFactor, new NSNumber(doubleQual / 100) }
+            };
+            var imgData = imgRep.RepresentationUsingTypeProperties(NSBitmapImageFileType.Jpeg, settings);
 
-        /// <summary>
-        /// Returns the image codec with the given mime type
-        /// </summary>
-        private static ImageCodecInfo GetEncoderInfo(string mimeType)
-        {
-            // Get image codecs for all image formats
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
-
-            // Find the correct image codec
-            for (int i = 0; i < codecs.Length; i++)
-                if (codecs[i].MimeType == mimeType)
-                    return codecs[i];
-            return null;
+            File.WriteAllBytes(path, imgData.ToArray());
         }
     }
 }

@@ -6,14 +6,14 @@ using iTextSharp.text.pdf.parser;
 using iTextSharp.text.pdf;
 using System.IO;
 using System.Drawing;
-using System.Drawing.Imaging;
+using AppKit;
 
 namespace CbrConverter
 {
 	internal class PDFImageListener : IRenderListener
 	{
 		/** the byte array of the extracted images */
-        public Dictionary<PageImageIndex, Image> ImagesList
+        public Dictionary<PageImageIndex, NSImage> ImagesList
         {
             get;
             set;
@@ -27,7 +27,7 @@ namespace CbrConverter
 		 */
 		public PDFImageListener(string outputPath)
 		{
-            ImagesList = new Dictionary<PageImageIndex, Image>();
+            ImagesList = new Dictionary<PageImageIndex, NSImage>();
             this.OutputPath = outputPath;
 			//_images = new List<Image>();
 		}
