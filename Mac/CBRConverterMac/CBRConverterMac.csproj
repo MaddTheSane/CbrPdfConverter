@@ -75,6 +75,8 @@
   <ItemGroup>
     <Folder Include="Resources\" />
     <Folder Include="Converter\" />
+    <Folder Include="Converter\Pdf\" />
+    <Folder Include="Converter\Image\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -91,24 +93,16 @@
     <Compile Include="..\..\CbrConverter\Converter\DataAccess.cs">
       <Link>Converter\DataAccess.cs</Link>
     </Compile>
-    <Compile Include="..\..\CbrConverter\Converter\Extract.cs">
-      <Link>Converter\Extract.cs</Link>
-    </Compile>
     <Compile Include="..\..\CbrConverter\Converter\PageImageIndex.cs">
       <Link>Converter\PageImageIndex.cs</Link>
     </Compile>
     <Compile Include="..\..\CbrConverter\Converter\PdfExtractionResult.cs">
       <Link>Converter\PdfExtractionResult.cs</Link>
     </Compile>
-    <Compile Include="..\..\CbrConverter\Converter\Image\ImageJoiner.cs">
-      <Link>Converter\Image\ImageJoiner.cs</Link>
-    </Compile>
-    <Compile Include="..\..\CbrConverter\Converter\Pdf\PDFImageListener.cs">
-      <Link>Converter\Pdf\PDFImageListener.cs</Link>
-    </Compile>
-    <Compile Include="..\..\CbrConverter\Converter\Pdf\PdfFunctions.cs">
-      <Link>Converter\Pdf\PdfFunctions.cs</Link>
-    </Compile>
+    <Compile Include="Converter\Pdf\PdfFunctions.cs" />
+    <Compile Include="Converter\Pdf\PDFImageListener.cs" />
+    <Compile Include="Converter\Image\ImageJoiner.cs" />
+    <Compile Include="Converter\Extract.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Main.storyboard" />
